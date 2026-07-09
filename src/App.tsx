@@ -86,12 +86,15 @@ declare global {
     readonly env: {
       readonly VITE_PAYSTACK_PUBLIC_KEY?: string;
       readonly VITE_API_BASE_URL?: string;
+      readonly VITE_ADMIN_PIN?: string;
       readonly [key: string]: string | undefined;
     };
   }
 }
 
-const ADMIN_PIN = "amaka2026";
+// Security Fix: PIN is now loaded from environment variables, never hardcoded.
+// If VITE_ADMIN_PIN is not set in Netlify, it defaults to a completely locked state ("LOCKED") so no one can guess it.
+const ADMIN_PIN = import.meta.env.VITE_ADMIN_PIN || "LOCKED";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 const PRODUCT_STORAGE_KEY = "hans-signature-products-v2";
 const ORDER_STORAGE_KEY = "hans-signature-orders-v2";
@@ -404,6 +407,8 @@ export default function App() {
   const [checkoutError, setCheckoutError] = useState("");
   const [orderStatus, setOrderStatus] = useState("");
   const [isPaying, setIsPaying] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isOrdersOpen, setIsOrdersOpen] = useState(false);
 
   useEffect(() => writeStorage(PRODUCT_STORAGE_KEY, products), [products]);
   useEffect(() => writeStorage(ORDER_STORAGE_KEY, orders), [orders]);
@@ -481,7 +486,9 @@ export default function App() {
   const deliveryFee = deliveryOptions[checkout.delivery].fee;
   const grandTotal = subtotal + (cartLines.length ? deliveryFee : 0);
   const cartYards = cart.reduce((sum, item) => sum + item.yards, 0);
-  const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+  const totalRevenue = orders
+    .filter((order) => order.status === "Delivered" || order.status === "Shipped")
+    .reduce((sum, order) => sum + order.total, 0);
   const lowStockCount = products.filter((product) => product.stock <= 10).length;
 
   const openProduct = (product: Product) => {
@@ -622,6 +629,14 @@ export default function App() {
 
   const handleCheckout = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (!user) {
+      setIsCartOpen(false);
+      setAuthMode("signup");
+      setAuthMessage("Please log in or sign up to complete your order and track its status.");
+      setIsAuthOpen(true);
+      return;
+    }
 
     if (!cartLines.length) {
       setCheckoutError("Your cart is empty. Add a fabric before checkout.");
@@ -897,105 +912,103 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f4ef] text-stone-950">
-      <header className="relative min-h-screen overflow-hidden bg-stone-950 text-white">
-        <img
-          src={heroImage}
-          alt="Hans Signature Fabrics shop owner arranging Ankara fabrics"
-          className="absolute inset-0 h-full w-full animate-kenburns object-cover opacity-80"
-        />
-        <div className="absolute inset-0 bg-black/50" />
-
-        <nav className="relative z-10 mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-5 py-4 sm:px-8">
-          <a href="#top" className="flex items-center gap-3">
-            <img src="/logo.jpg" alt="Logo" className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg object-contain bg-[#0f3d24]" />
-            <span className="hidden text-xs font-bold uppercase tracking-[0.2em] text-white sm:block sm:text-sm sm:tracking-[0.34em]">
-              Hans Signature Fabrics
-            </span>
-          </a>
-          <div className="hidden items-center gap-6 text-sm font-medium text-white/90 lg:flex">
-            <a href="#about" className="transition hover:text-white">
-              About Us
-            </a>
-            <a href="#collections" className="transition hover:text-white">
-              Shop Collections
-            </a>
-            <a href="#inventory" className="transition hover:text-white">
-              Inventory
-            </a>
-            <a href="#delivery" className="transition hover:text-white">
-              Delivery
+    <div className="min-h-screen bg-white text-stone-950 pt-20 lg:pt-32">
+      <header className="fixed left-0 right-0 top-0 z-50 bg-[#0f3d24] text-white shadow-md">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-5 py-3 sm:px-8">
+          <div className="flex items-center gap-4">
+            <button onClick={() => setIsMobileMenuOpen(true)} className="p-1 lg:hidden">
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+            <a href="#top" className="flex items-center gap-3">
+              <img src="/logo.jpg" alt="Logo" className="h-10 w-10 rounded-lg bg-[#fdf8ec] object-contain p-0.5 sm:h-12 sm:w-12" />
+              <span className="hidden text-xs font-bold uppercase tracking-[0.2em] sm:block sm:text-sm sm:tracking-[0.34em]">
+                Hans Signature
+              </span>
             </a>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="hidden items-center gap-8 text-sm font-medium text-white/90 lg:flex">
+            <a href="#about" className="transition hover:text-white">About Us</a>
+            <div className="group relative py-4">
+              <a href="#collections" className="transition hover:text-white">Shop Collections</a>
+              <div className="absolute left-0 top-full hidden w-64 flex-col rounded-2xl bg-white p-3 text-stone-950 shadow-xl group-hover:flex">
+                <button onClick={() => { setActiveCategory("All"); document.getElementById('collections')?.scrollIntoView(); }} className="rounded-xl px-4 py-2 text-left text-sm hover:bg-[#fdf8ec]">All Fabrics</button>
+                {productCategories.map(cat => (
+                  <button key={cat} onClick={() => { setActiveCategory(cat); document.getElementById('collections')?.scrollIntoView(); }} className="rounded-xl px-4 py-2 text-left text-sm hover:bg-[#fdf8ec]">{cat}</button>
+                ))}
+              </div>
+            </div>
+            <a href="#inventory" className="transition hover:text-white">Trending</a>
+            <a href="#delivery" className="transition hover:text-white">Delivery</a>
+          </div>
+
+          <div className="flex items-center gap-4 sm:gap-6">
             {user ? (
               <div className="hidden items-center gap-4 sm:flex">
-                <span className="text-sm font-semibold text-white/90">Hi, {user.email?.split("@")[0]}</span>
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  className="text-sm text-white/60 transition hover:text-white"
-                >
-                  Log out
-                </button>
+                <button onClick={() => setIsOrdersOpen(true)} className="text-sm font-semibold text-white/90 hover:text-white">My Orders</button>
+                <button onClick={handleSignOut} className="text-sm text-white/60 hover:text-white">Log out</button>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => setIsAuthOpen(true)}
-                className="hidden text-sm font-semibold text-white/90 transition hover:text-white sm:inline-flex"
-              >
+              <button onClick={() => setIsAuthOpen(true)} className="inline-flex items-center justify-center rounded-full border border-white/30 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-white hover:text-[#0f3d24]">
                 Log in
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => setIsAdminOpen(true)}
-              className="hidden rounded-full border border-white/35 px-4 py-2 text-sm text-white transition hover:border-white hover:bg-white hover:text-stone-950 sm:inline-flex"
-            >
-              Admin
+            <button onClick={() => setIsCartOpen(true)} className="relative inline-flex items-center p-1 transition hover:text-[#d4af37]">
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+              {cartYards > 0 && <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#d4af37] text-[10px] font-bold text-stone-950">{cartYards}</span>}
             </button>
-            <button
-              type="button"
-              onClick={() => setIsCartOpen(true)}
-              className="inline-flex items-center gap-2 rounded-full border border-white/35 px-4 py-2 text-sm text-white transition hover:border-white hover:bg-white hover:text-stone-950"
-            >
-              Cart
-              <span className="font-semibold">{cartYards}</span>
-            </button>
-          </div>
-        </nav>
-
-        <div id="top" className="relative z-10 mx-auto flex min-h-[calc(100vh-96px)] max-w-7xl items-center px-5 pb-16 pt-16 sm:px-8">
-          <div className="max-w-3xl animate-fade-up">
-            <h1 className="text-5xl font-semibold leading-[0.95] tracking-[-0.06em] text-white sm:text-7xl lg:text-8xl">
-              Hans Signature Fabrics
-            </h1>
-            <p className="mt-7 max-w-2xl text-2xl font-medium leading-tight text-white/90 sm:text-4xl">
-              Premium Fabrics for Every Occasion
-            </p>
-            <p className="mt-5 max-w-xl text-base leading-8 text-white/80 sm:text-lg">
-              Discover Premium Ankara Fabrics That Make Every Outfit Stand Out. Shop Retail & Wholesale with Fast Nationwide Delivery.
-            </p>
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <a
-                href="#collections"
-                className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-stone-950 transition hover:bg-[#f3d1a9]"
-              >
-                Shop collections
-              </a>
-              <a
-                href={getWhatsAppUrl("Hello Hans Signature Fabrics, I want to ask about available fabrics.")}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center justify-center rounded-full border border-white/40 px-7 py-3 text-sm font-semibold text-white transition hover:border-white hover:bg-white hover:text-stone-950"
-              >
-                Chat on WhatsApp
-              </a>
-            </div>
           </div>
         </div>
       </header>
+
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-[60] overflow-y-auto bg-[#0f3d24] text-white">
+          <div className="flex items-center justify-between p-5">
+            <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#d4af37]">Menu</span>
+            <button onClick={() => setIsMobileMenuOpen(false)} className="p-2">
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+          <div className="flex flex-col gap-6 p-5 text-lg font-semibold">
+            <a href="#about" onClick={() => setIsMobileMenuOpen(false)}>About Us</a>
+            <div>
+              <p className="mb-3 text-sm font-bold uppercase tracking-widest text-[#d4af37]">Shop Categories</p>
+              <div className="flex flex-col gap-4 pl-4 text-base font-medium text-white/80">
+                <button className="text-left" onClick={() => { setActiveCategory("All"); setIsMobileMenuOpen(false); document.getElementById('collections')?.scrollIntoView(); }}>All Fabrics</button>
+                {productCategories.map(cat => (
+                  <button key={cat} className="text-left" onClick={() => { setActiveCategory(cat); setIsMobileMenuOpen(false); document.getElementById('collections')?.scrollIntoView(); }}>{cat}</button>
+                ))}
+              </div>
+            </div>
+            <a href="#inventory" onClick={() => setIsMobileMenuOpen(false)}>Trending & Low Stock</a>
+            <a href="#delivery" onClick={() => setIsMobileMenuOpen(false)}>Delivery Info</a>
+            <div className="mt-8 flex flex-col gap-6 border-t border-white/20 pt-8">
+              {user ? (
+                <>
+                  <button onClick={() => { setIsMobileMenuOpen(false); setIsOrdersOpen(true); }} className="text-left">My Orders</button>
+                  <button onClick={() => { setIsMobileMenuOpen(false); handleSignOut(); }} className="text-left text-red-400">Log out</button>
+                </>
+              ) :="text-left">Log In / Sign Up</button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <section id="top" className="relative flex min-h-[60vh] items-center overflow-hidden bg-stone-950 px-5 py-20 sm:px-8">
+        <img src={heroImage} alt="Hans Signature Fabrics" className="absolute inset-0 h-full w-full object-cover opacity-80" />
+        <div className="absolute inset-0 bg-black/60" />
+        <div className="relative z-10 mx-auto w-full max-w-7xl">
+          <div className="max-w-3xl animate-fade-up">
+            <h1 className="text-5xl font-semibold leading-[0.95] tracking-[-0.06em] text-white sm:text-7xl lg:text-8xl">Hans Signature Fabrics</h1>
+            <p className="mt-7 max-w-2xl text-2xl font-medium leading-tight text-white/90 sm:text-4xl">Premium Fabrics for Every Occasion</p>
+            <p className="mt-5 max-w-xl text-base leading-8 text-white/80 sm:text-lg">Discover Premium Ankara Fabrics That Make Every Outfit Stand Out. Shop Retail & Wholesale with Fast Nationwide Delivery.</p>
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <button onClick={() => document.getElementById('collections')?.scrollIntoView()} className="inline-flex items-center justify-center rounded-full bg-white px-7 py-4 text-sm font-semibold text-stone-950 transition hover:bg-[#fdf8ec]">Shop collections</button>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <main>
         <section id="about" className="bg-[#fdf8ec] py-20 text-stone-950 lg:py-28">
@@ -1017,7 +1030,7 @@ export default function App() {
               Choose the print that fits the occasion.
             </h2>
             <p className="mt-5 text-lg leading-8 text-stone-600">
-              Browse fabrics by style, order in yards, add delivery details, and pay securely when Paystack is connected.
+              Browse fabrics by style, order in yards, add delivery details, and pay securely with Paystack.
             </p>
           </div>
 
@@ -1038,55 +1051,30 @@ export default function App() {
             ))}
           </div>
 
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
             {visibleProducts.map((product, index) => (
               <article
                 key={product.id}
-                className="group overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-stone-200/70"
+                className="group cursor-pointer"
                 style={{ animationDelay: `${index * 80}ms` }}
+                onClick={() => openProduct(product)}
               >
-                <button type="button" onClick={() => openProduct(product)} className="block w-full text-left">
-                  <div className="relative aspect-[4/5] overflow-hidden bg-stone-200">
-                    <img
-                      src={getProductImage(product)}
-                      alt={product.name}
-                      className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                    />
-                    <div className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-stone-950 backdrop-blur">
-                      {product.tag}
-                    </div>
+                <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-stone-100 sm:rounded-2xl">
+                  <img
+                    src={getProductImage(product)}
+                    alt={product.name}
+                    className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute left-2 top-2 rounded-full bg-white/95 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-950 shadow-sm backdrop-blur">
+                    {product.tag}
                   </div>
-                  <div className="space-y-4 p-5">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#a85c20]">
-                        {product.category}
-                      </p>
-                      <h3 className="mt-2 text-2xl font-semibold tracking-[-0.03em]">{product.name}</h3>
-                    </div>
-                    <p className="text-sm leading-6 text-stone-600">{product.description}</p>
-                    <div className="flex items-end justify-between gap-4">
-                      <div>
-                        <p className="text-xs text-stone-500">Per yard</p>
-                        <p className="text-lg font-semibold">{formatMoney(product.price)}</p>
-                      </div>
-                      <div className="text-right text-sm">
-                        <p className={product.stock <= 10 ? "font-semibold text-red-700" : "font-semibold text-emerald-700"}>
-                          {product.stock} yards left
-                        </p>
-                        <p className="text-stone-500">Min. {product.minYards} yards</p>
-                      </div>
-                    </div>
-                  </div>
-                </button>
-                <div className="px-5 pb-5">
-                  <button
-                    type="button"
-                    disabled={product.stock < product.minYards}
-                    onClick={() => addToCart(product, product.minYards)}
-                    className="w-full rounded-full bg-stone-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#a85c20] disabled:cursor-not-allowed disabled:bg-stone-300"
-                  >
-                    {product.stock < product.minYards ? "Out of stock" : `Add ${product.minYards} yards`}
-                  </button>
+                </div>
+                <div className="mt-3 space-y-1">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#a85c20] sm:text-xs">
+                    {product.category}
+                  </p>
+                  <h3 className="truncate text-xs font-semibold sm:text-sm">{product.name}</h3>
+                  <p className="text-xs font-semibold text-stone-600 sm:text-sm">{formatMoney(product.price)} / yard</p>
                 </div>
               </article>
             ))}
@@ -1120,43 +1108,52 @@ export default function App() {
           </div>
         </section>
 
-        <section id="inventory" className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:py-28">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#a85c20]">Inventory</p>
-              <h2 className="mt-4 text-4xl font-semibold tracking-[-0.04em] sm:text-6xl text-[#0f3d24]">
-                Keep stock visible before customers order.
-              </h2>
-              <p className="mt-5 text-lg leading-8 text-stone-600">
-                Customers can see what is available, but only the owner can change stock inside the admin dashboard.
-              </p>
-            </div>
+        <section id="inventory" className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:py-28 overflow-hidden">
+          <div className="mb-10 text-center">
+            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#a85c20]">Trending</p>
+            <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-[#0f3d24] sm:text-5xl">
+              Trending & Low Stock
+            </h2>
+            <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-stone-600 sm:text-base">
+              Our most-loved fabrics sell out quickly. Secure your favorite designs before they're gone. Once a fabric is sold out, restocking may take time—or it may not return at all. Shop Now
+            </p>
           </div>
 
-          <div className="mt-12 overflow-hidden rounded-[2rem] border border-stone-200 bg-white">
-            <div className="hidden grid-cols-[1.4fr_0.8fr_0.8fr] border-b border-stone-200 px-6 py-4 text-sm font-semibold text-stone-500 md:grid">
-              <span>Fabric</span>
-              <span>Collection</span>
-              <span>Stock</span>
-            </div>
-            {products.map((product) => (
-              <div
-                key={product.id}
-                className="grid gap-4 border-b border-stone-100 px-5 py-5 last:border-b-0 md:grid-cols-[1.4fr_0.8fr_0.8fr] md:items-center md:px-6"
-              >
-                <div className="flex items-center gap-4">
-                  <img src={getProductImage(product)} alt="" className="h-16 w-16 rounded-2xl object-cover" />
-                  <div>
-                    <p className="font-semibold">{product.name}</p>
-                    <p className="text-sm text-stone-500">{product.palette}</p>
+          <div className="-mx-5 flex gap-4 overflow-x-auto px-5 pb-8 sm:-mx-8 sm:gap-6 sm:px-8 snap-x snap-mandatory hide-scrollbar">
+            {products
+              .filter((p) => p.stock <= 10 || p.tag.toLowerCase().includes("new"))
+              .map((product) => (
+                <article
+                  key={product.id}
+                  className="group relative flex w-[65vw] shrink-0 snap-start flex-col gap-3 sm:w-[45vw] lg:w-[300px]"
+                >
+                  <button type="button" onClick={() => openProduct(product)} className="text-left">
+                    <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-stone-100">
+                      <img
+                        src={getProductImage(product)}
+                        alt={product.name}
+                        className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                      />
+                      <div className="absolute left-3 top-3 rounded-full bg-red-600 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
+                        {product.stock <= 10 ? "Almost Gone" : "Trending"}
+                      </div>
+                    </div>
+                  </button>
+                  
+                  <div className="flex flex-col gap-1">
+                    <h3 className="truncate text-sm font-semibold">{product.name}</h3>
+                    <p className="text-sm font-semibold text-stone-600">{formatMoney(product.price)} / yard</p>
+                    <button
+                      type="button"
+                      disabled={product.stock < product.minYards}
+                      onClick={(e) => { e.stopPropagation(); openProduct(product); }}
+                      className="mt-2 w-full rounded-full bg-stone-950 py-2.5 text-xs font-semibold text-white transition hover:bg-[#0c331d] disabled:bg-stone-300"
+                    >
+                      Add to Cart
+                    </button>
                   </div>
-                </div>
-                <p className="text-sm text-stone-600">{product.category}</p>
-                <p className={product.stock <= 10 ? "font-semibold text-red-700" : "font-semibold text-emerald-700"}>
-                  {product.stock} yards
-                </p>
-              </div>
-            ))}
+                </article>
+              ))}
           </div>
         </section>
 
@@ -1222,6 +1219,8 @@ export default function App() {
                 <p className="text-xs uppercase tracking-[0.2em] text-[#d4af37]">Customer Care</p>
                 <a href="#inventory" className="transition hover:text-white">Live Inventory</a>
                 <a href="#delivery" className="transition hover:text-white">Delivery Information</a>
+                <button type="button" onClick={() => setIsOrdersOpen(true)} className="text-left transition hover:text-white">My Orders</button>
+                <button type="button" onClick={() => setIsAdminOpen(true)} className="text-left transition hover:text-white">Admin Login</button>
               </div>
             </div>
           </div>
@@ -1679,6 +1678,49 @@ export default function App() {
         />
       )}
 
+      {isOrdersOpen && (
+        <aside className="fixed inset-y-0 right-0 z-[80] flex w-full max-w-md transform flex-col overflow-y-auto bg-white shadow-2xl transition duration-300">
+          <div className="flex items-center justify-between border-b border-stone-100 p-6 sm:p-8">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#d4af37]">Customer Account</p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">My Orders</h2>
+            </div>
+            <button onClick={() => setIsOrdersOpen(false)} className="rounded-full border border-stone-200 px-4 py-2 text-sm font-semibold transition hover:border-stone-950">Close</button>
+          </div>
+          <div className="flex-1 p-6 sm:p-8">
+            {orders.filter(o => o.customer.email === user?.email).length === 0 ? (
+               <p className="text-stone-500">You haven't placed any orders yet.</p>
+            ) : (
+               <div className="space-y-6">
+                 {orders.filter(o => o.customer.email === user?.email).map(order => (
+                   <div key={order.id} className="rounded-2xl border border-stone-200 p-4">
+                     <div className="mb-4 flex items-start justify-between">
+                       <div>
+                         <p className="text-xs text-stone-500">Order Ref: {order.reference}</p>
+                         <p className="font-semibold">{new Date(order.createdAt).toLocaleDateString()}</p>
+                       </div>
+                       <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase ${order.status === 'Delivered' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{order.status}</span>
+                     </div>
+                     <div className="space-y-2">
+                       {order.items.map(item => (
+                         <div key={item.productId} className="flex justify-between text-sm">
+                           <span className="truncate pr-4">{item.yards}x {item.productName}</span>
+                           <span className="font-semibold">{formatMoney(item.total)}</span>
+                         </div>
+                       ))}
+                     </div>
+                     <div className="mt-4 flex justify-between border-t border-stone-100 pt-4 font-semibold">
+                       <span>Total</span>
+                       <span>{formatMoney(order.total)}</span>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+            )}
+          </div>
+        </aside>
+      )}
+
       {isAdminOpen && (
         <div className="fixed inset-0 z-[70] overflow-auto bg-stone-950/70 p-3 backdrop-blur-sm sm:p-6">
           <div className="mx-auto min-h-[92vh] max-w-7xl rounded-[2rem] bg-[#f8f4ef] shadow-2xl">
@@ -1904,7 +1946,7 @@ export default function App() {
                         onClick={resetDemoData}
                         className="rounded-full border border-stone-300 px-4 py-2 text-sm font-semibold transition hover:border-stone-950"
                       >
-                        Reset demo
+                        Reset only
                       </button>
                     </div>
                     <div className="mt-6 space-y-3">
@@ -2034,14 +2076,6 @@ export default function App() {
           </div>
         </div>
       )}
-
-      <button
-        type="button"
-        onClick={() => setIsAdminOpen(true)}
-        className="fixed bottom-5 right-5 z-30 rounded-full bg-stone-950 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-[#a85c20] sm:hidden"
-      >
-        Admin
-      </button>
 
       <a
         href={getWhatsAppUrl("Hello Hans Signature Fabrics, I am interested in your fabrics.")}
