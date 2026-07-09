@@ -106,6 +106,7 @@ const defaultProducts: Product[] = [
     stock: 24,
     minYards: 3,
     image: "/images/ankara-geo-ochre.jpg",
+    images: ["/images/ankara-geo-ochre.jpg"],
     palette: "Ochre, navy, cream",
     description: "A clean geometric print for gowns, two-piece sets, shirts, and corporate casual looks.",
     tag: "New arrival",
@@ -118,6 +119,7 @@ const defaultProducts: Product[] = [
     stock: 18,
     minYards: 3,
     image: "/images/ankara-cocoa-stripe.jpg",
+    images: ["/images/ankara-cocoa-stripe.jpg"],
     palette: "Cocoa, blush, black",
     description: "A refined stripe and dot print that works beautifully for wrappers, kaftans, and casual sets.",
     tag: "Best seller",
@@ -130,6 +132,7 @@ const defaultProducts: Product[] = [
     stock: 31,
     minYards: 3,
     image: "/images/ankara-mono-floral.jpg",
+    images: ["/images/ankara-mono-floral.jpg"],
     palette: "Black and white",
     description: "Minimal floral details for customers who want Ankara with a calm, modern finish.",
     tag: "Everyday wear",
@@ -142,6 +145,7 @@ const defaultProducts: Product[] = [
     stock: 52,
     minYards: 6,
     image: "/images/ankara-charcoal-wave.jpg",
+    images: ["/images/ankara-charcoal-wave.jpg"],
     palette: "Charcoal, ivory",
     description: "A repeat pattern suited for bulk orders, uniforms, family aso ebi, and ready-to-wear production.",
     tag: "Wholesale ready",
@@ -154,6 +158,7 @@ const defaultProducts: Product[] = [
     stock: 12,
     minYards: 3,
     image: "/images/ankara-rust-symbol.jpg",
+    images: ["/images/ankara-rust-symbol.jpg"],
     palette: "Rust, orange, cream",
     description: "Warm heritage-inspired motifs for customers who want a bold traditional statement.",
     tag: "Limited stock",
@@ -377,6 +382,7 @@ export default function App() {
   const [heroImage, setHeroImage] = useState(() => readStorage(HERO_STORAGE_KEY, "/images/hans-hero.jpg"));
   const [isBackendConnected, setIsBackendConnected] = useState(false);
   const [isSupabaseConnected, setIsSupabaseConnected] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -398,6 +404,10 @@ export default function App() {
   const [checkoutError, setCheckoutError] = useState("");
   const [orderStatus, setOrderStatus] = useState("");
   const [isPaying, setIsPaying] = useState(false);
+
+  useEffect(() => writeStorage(PRODUCT_STORAGE_KEY, products), [products]);
+  useEffect(() => writeStorage(ORDER_STORAGE_KEY, orders), [orders]);
+  useEffect(() => writeStorage(HERO_STORAGE_KEY, heroImage), [heroImage]);
 
   useEffect(() => {
     if (supabase) {
@@ -449,10 +459,6 @@ export default function App() {
       ignore = true;
     };
   }, []);
-
-  useEffect(() => writeStorage(PRODUCT_STORAGE_KEY, products), [products]);
-  useEffect(() => writeStorage(ORDER_STORAGE_KEY, orders), [orders]);
-  useEffect(() => writeStorage(HERO_STORAGE_KEY, heroImage), [heroImage]);
 
   const visibleProducts = useMemo(() => {
     if (activeCategory === "All") return products;
@@ -893,14 +899,14 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#f8f4ef] text-stone-950">
       <header className="relative min-h-screen overflow-hidden bg-stone-950 text-white">
-          <img
-            src={heroImage}
-            alt="Hans Signature Fabrics shop owner arranging Ankara fabrics"
-            className="absolute inset-0 h-full w-full animate-kenburns object-cover opacity-80"
-          />
-          <div className="absolute inset-0 bg-black/50" />
+        <img
+          src={heroImage}
+          alt="Hans Signature Fabrics shop owner arranging Ankara fabrics"
+          className="absolute inset-0 h-full w-full animate-kenburns object-cover opacity-80"
+        />
+        <div className="absolute inset-0 bg-black/50" />
 
-          <nav className="relative z-10 mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-5 py-4 sm:px-8">
+        <nav className="relative z-10 mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-5 py-4 sm:px-8">
           <a href="#top" className="flex items-center gap-3">
             <img src="/logo.jpg" alt="Logo" className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg object-contain bg-[#0f3d24]" />
             <span className="hidden text-xs font-bold uppercase tracking-[0.2em] text-white sm:block sm:text-sm sm:tracking-[0.34em]">
@@ -992,7 +998,7 @@ export default function App() {
       </header>
 
       <main>
-        <section id="about" className="bg-white py-20 text-stone-950 lg:py-28">
+        <section id="about" className="bg-[#fdf8ec] py-20 text-stone-950 lg:py-28">
           <div className="mx-auto max-w-7xl px-5 sm:px-8 text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#0f3d24]">About Us</p>
             <h2 className="mt-6 text-3xl font-semibold tracking-[-0.03em] sm:text-5xl max-w-4xl mx-auto leading-tight text-stone-950">
@@ -1190,32 +1196,58 @@ export default function App() {
         </section>
       </main>
 
-      <footer className="bg-[#0f3d24] px-5 py-10 text-white sm:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col gap-6 text-sm text-white/65 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="font-semibold text-white">Hans Signature Fabrics</p>
-            <p className="mt-1">Premium Prints for Every Occasion.</p>
-            <p className="mt-1">Oshodi/CANA, Ikorodu, Lagos, Nigeria.</p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {[
-              ["whatsapp", "WhatsApp", getWhatsAppUrl("Hello Hans Signature Fabrics, I am contacting you from the website.")],
-              ["instagram", "Instagram", "https://www.instagram.com/hans_signaturefabric/"],
-              ["facebook", "Facebook", "https://www.facebook.com/search/top?q=Ibeh%20Ndidiamaka"],
-              ["email", "Email", "mailto:hanssignaturefabric3@gmail.com"],
-              ["phone", "Call", "tel:07053734349"],
-            ].map(([icon, label, href]) => (
-              <a
-                key={label}
-                href={href}
-                target={href.startsWith("http") ? "_blank" : undefined}
-                rel={href.startsWith("http") ? "noreferrer" : undefined}
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-white/75 transition hover:border-white/40 hover:text-white"
-              >
-                <SocialIcon name={icon as "whatsapp" | "instagram" | "facebook" | "email" | "phone"} />
-                {label}
+      <footer className="bg-[#0f3d24] px-5 py-12 text-white sm:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-col gap-10 lg:flex-row lg:justify-between">
+            <div className="flex flex-col items-start gap-4">
+              <a href="#top" className="flex items-center gap-3">
+                <img src="/logo.jpg" alt="Logo" className="h-14 w-14 rounded-lg object-contain bg-[#fdf8ec] p-1" />
+                <span className="text-sm font-bold uppercase tracking-[0.2em] text-white">
+                  Hans Signature Fabrics
+                </span>
               </a>
-            ))}
+              <div className="text-sm text-white/70">
+                <p>Premium Prints for Every Occasion.</p>
+                <p className="mt-1">Oshodi/CANA, Ikorodu, Lagos, Nigeria.</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4 text-sm font-medium text-white/90 sm:flex-row sm:gap-10">
+              <div className="flex flex-col gap-3">
+                <p className="text-xs uppercase tracking-[0.2em] text-[#d4af37]">Explore</p>
+                <a href="#about" className="transition hover:text-white">About Us</a>
+                <a href="#collections" className="transition hover:text-white">Shop Collections</a>
+              </div>
+              <div className="flex flex-col gap-3">
+                <p className="text-xs uppercase tracking-[0.2em] text-[#d4af37]">Customer Care</p>
+                <a href="#inventory" className="transition hover:text-white">Live Inventory</a>
+                <a href="#delivery" className="transition hover:text-white">Delivery Information</a>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-12 flex flex-wrap items-center gap-4 border-t border-white/10 pt-8 text-sm text-white/65 lg:justify-between">
+            <p>© {new Date().getFullYear()} Hans Signature Fabrics. All rights reserved.</p>
+            <div className="flex flex-wrap gap-3">
+              {[
+                ["whatsapp", "WhatsApp", getWhatsAppUrl("Hello Hans Signature Fabrics, I am contacting you from the website.")],
+                ["instagram", "Instagram", "https://www.instagram.com/hans_signaturefabric/"],
+                ["facebook", "Facebook", "https://www.facebook.com/search/top?q=Ibeh%20Ndidiamaka"],
+                ["email", "Email", "mailto:hanssignaturefabric3@gmail.com"],
+                ["phone", "Call", "tel:07053734349"],
+              ].map(([icon, label, href]) => (
+                <a
+                  key={label}
+                  href={href}
+                  target={href.startsWith("http") ? "_blank" : undefined}
+                  rel={href.startsWith("http") ? "noreferrer" : undefined}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-white/75 transition hover:border-white/40 hover:text-white"
+                >
+                  <SocialIcon name={icon as "whatsapp" | "instagram" | "facebook" | "email" | "phone"} />
+                  {label}
+                </a>
+              ))}
+            </div>
           </div>
         </div>
       </footer>
@@ -1545,15 +1577,6 @@ export default function App() {
           )}
         </div>
       </aside>
-
-      {isCartOpen && (
-        <button
-          type="button"
-          aria-label="Close cart overlay"
-          onClick={() => setIsCartOpen(false)}
-          className="fixed inset-0 z-40 bg-stone-950/30 backdrop-blur-[2px]"
-        />
-      )}
 
       {isAuthOpen && !user && (
         <aside className="fixed inset-y-0 right-0 z-[80] flex w-full max-w-md transform flex-col bg-white shadow-2xl transition duration-300 translate-x-0 overflow-y-auto">
@@ -1888,7 +1911,7 @@ export default function App() {
                       {products.map((product) => (
                         <div key={product.id} className="grid gap-4 rounded-3xl border border-stone-200 p-4 md:grid-cols-[1fr_auto] md:items-center">
                           <div className="flex gap-4">
-                          <img src={getProductImage(product)} alt="" className="h-20 w-20 rounded-2xl object-cover" />
+                            <img src={getProductImage(product)} alt="" className="h-20 w-20 rounded-2xl object-cover" />
                             <div>
                               <p className="font-semibold">{product.name}</p>
                               <p className="text-sm text-stone-500">{product.category} / {formatMoney(product.price)} per yard</p>
