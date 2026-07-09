@@ -109,7 +109,6 @@ const defaultProducts: Product[] = [
     stock: 24,
     minYards: 3,
     image: "/images/ankara-geo-ochre.jpg",
-    images: ["/images/ankara-geo-ochre.jpg"],
     palette: "Ochre, navy, cream",
     description: "A clean geometric print for gowns, two-piece sets, shirts, and corporate casual looks.",
     tag: "New arrival",
@@ -122,7 +121,6 @@ const defaultProducts: Product[] = [
     stock: 18,
     minYards: 3,
     image: "/images/ankara-cocoa-stripe.jpg",
-    images: ["/images/ankara-cocoa-stripe.jpg"],
     palette: "Cocoa, blush, black",
     description: "A refined stripe and dot print that works beautifully for wrappers, kaftans, and casual sets.",
     tag: "Best seller",
@@ -135,7 +133,6 @@ const defaultProducts: Product[] = [
     stock: 31,
     minYards: 3,
     image: "/images/ankara-mono-floral.jpg",
-    images: ["/images/ankara-mono-floral.jpg"],
     palette: "Black and white",
     description: "Minimal floral details for customers who want Ankara with a calm, modern finish.",
     tag: "Everyday wear",
@@ -148,7 +145,6 @@ const defaultProducts: Product[] = [
     stock: 52,
     minYards: 6,
     image: "/images/ankara-charcoal-wave.jpg",
-    images: ["/images/ankara-charcoal-wave.jpg"],
     palette: "Charcoal, ivory",
     description: "A repeat pattern suited for bulk orders, uniforms, family aso ebi, and ready-to-wear production.",
     tag: "Wholesale ready",
@@ -161,7 +157,6 @@ const defaultProducts: Product[] = [
     stock: 12,
     minYards: 3,
     image: "/images/ankara-rust-symbol.jpg",
-    images: ["/images/ankara-rust-symbol.jpg"],
     palette: "Rust, orange, cream",
     description: "Warm heritage-inspired motifs for customers who want a bold traditional statement.",
     tag: "Limited stock",
@@ -385,7 +380,6 @@ export default function App() {
   const [heroImage, setHeroImage] = useState(() => readStorage(HERO_STORAGE_KEY, "/images/hans-hero.jpg"));
   const [isBackendConnected, setIsBackendConnected] = useState(false);
   const [isSupabaseConnected, setIsSupabaseConnected] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -409,10 +403,6 @@ export default function App() {
   const [isPaying, setIsPaying] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isOrdersOpen, setIsOrdersOpen] = useState(false);
-
-  useEffect(() => writeStorage(PRODUCT_STORAGE_KEY, products), [products]);
-  useEffect(() => writeStorage(ORDER_STORAGE_KEY, orders), [orders]);
-  useEffect(() => writeStorage(HERO_STORAGE_KEY, heroImage), [heroImage]);
 
   useEffect(() => {
     if (supabase) {
@@ -464,6 +454,10 @@ export default function App() {
       ignore = true;
     };
   }, []);
+
+  useEffect(() => writeStorage(PRODUCT_STORAGE_KEY, products), [products]);
+  useEffect(() => writeStorage(ORDER_STORAGE_KEY, orders), [orders]);
+  useEffect(() => writeStorage(HERO_STORAGE_KEY, heroImage), [heroImage]);
 
   const visibleProducts = useMemo(() => {
     if (activeCategory === "All") return products;
@@ -988,7 +982,8 @@ export default function App() {
                   <button onClick={() => { setIsMobileMenuOpen(false); setIsOrdersOpen(true); }} className="text-left">My Orders</button>
                   <button onClick={() => { setIsMobileMenuOpen(false); handleSignOut(); }} className="text-left text-red-400">Log out</button>
                 </>
-              ) :="text-left">Log In / Sign Up</button>
+              ) : (
+                <button onClick={() => { setIsMobileMenuOpen(false); setIsAuthOpen(true); }} className="text-left">Log In / Sign Up</button>
               )}
             </div>
           </div>
@@ -1577,6 +1572,15 @@ export default function App() {
         </div>
       </aside>
 
+      {isCartOpen && (
+        <button
+          type="button"
+          aria-label="Close cart overlay"
+          onClick={() => setIsCartOpen(false)}
+          className="fixed inset-0 z-40 bg-stone-950/30 backdrop-blur-[2px]"
+        />
+      )}
+
       {isAuthOpen && !user && (
         <aside className="fixed inset-y-0 right-0 z-[80] flex w-full max-w-md transform flex-col bg-white shadow-2xl transition duration-300 translate-x-0 overflow-y-auto">
           <div className="flex items-center justify-between p-6 sm:p-8">
@@ -1676,49 +1680,6 @@ export default function App() {
           onClick={() => setIsAuthOpen(false)}
           className="fixed inset-0 z-[70] bg-stone-950/30 backdrop-blur-[2px]"
         />
-      )}
-
-      {isOrdersOpen && (
-        <aside className="fixed inset-y-0 right-0 z-[80] flex w-full max-w-md transform flex-col overflow-y-auto bg-white shadow-2xl transition duration-300">
-          <div className="flex items-center justify-between border-b border-stone-100 p-6 sm:p-8">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#d4af37]">Customer Account</p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">My Orders</h2>
-            </div>
-            <button onClick={() => setIsOrdersOpen(false)} className="rounded-full border border-stone-200 px-4 py-2 text-sm font-semibold transition hover:border-stone-950">Close</button>
-          </div>
-          <div className="flex-1 p-6 sm:p-8">
-            {orders.filter(o => o.customer.email === user?.email).length === 0 ? (
-               <p className="text-stone-500">You haven't placed any orders yet.</p>
-            ) : (
-               <div className="space-y-6">
-                 {orders.filter(o => o.customer.email === user?.email).map(order => (
-                   <div key={order.id} className="rounded-2xl border border-stone-200 p-4">
-                     <div className="mb-4 flex items-start justify-between">
-                       <div>
-                         <p className="text-xs text-stone-500">Order Ref: {order.reference}</p>
-                         <p className="font-semibold">{new Date(order.createdAt).toLocaleDateString()}</p>
-                       </div>
-                       <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase ${order.status === 'Delivered' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{order.status}</span>
-                     </div>
-                     <div className="space-y-2">
-                       {order.items.map(item => (
-                         <div key={item.productId} className="flex justify-between text-sm">
-                           <span className="truncate pr-4">{item.yards}x {item.productName}</span>
-                           <span className="font-semibold">{formatMoney(item.total)}</span>
-                         </div>
-                       ))}
-                     </div>
-                     <div className="mt-4 flex justify-between border-t border-stone-100 pt-4 font-semibold">
-                       <span>Total</span>
-                       <span>{formatMoney(order.total)}</span>
-                     </div>
-                   </div>
-                 ))}
-               </div>
-            )}
-          </div>
-        </aside>
       )}
 
       {isAdminOpen && (
@@ -1953,7 +1914,7 @@ export default function App() {
                       {products.map((product) => (
                         <div key={product.id} className="grid gap-4 rounded-3xl border border-stone-200 p-4 md:grid-cols-[1fr_auto] md:items-center">
                           <div className="flex gap-4">
-                            <img src={getProductImage(product)} alt="" className="h-20 w-20 rounded-2xl object-cover" />
+                          <img src={getProductImage(product)} alt="" className="h-20 w-20 rounded-2xl object-cover" />
                             <div>
                               <p className="font-semibold">{product.name}</p>
                               <p className="text-sm text-stone-500">{product.category} / {formatMoney(product.price)} per yard</p>
@@ -2075,6 +2036,49 @@ export default function App() {
             )}
           </div>
         </div>
+      )}
+
+      {isOrdersOpen && (
+        <aside className="fixed inset-y-0 right-0 z-[80] flex w-full max-w-md transform flex-col overflow-y-auto bg-white shadow-2xl transition duration-300">
+          <div className="flex items-center justify-between border-b border-stone-100 p-6 sm:p-8">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#d4af37]">Customer Account</p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">My Orders</h2>
+            </div>
+            <button onClick={() => setIsOrdersOpen(false)} className="rounded-full border border-stone-200 px-4 py-2 text-sm font-semibold transition hover:border-stone-950">Close</button>
+          </div>
+          <div className="flex-1 p-6 sm:p-8">
+            {orders.filter(o => o.customer.email === user?.email).length === 0 ? (
+               <p className="text-stone-500">You haven't placed any orders yet.</p>
+            ) : (
+               <div className="space-y-6">
+                 {orders.filter(o => o.customer.email === user?.email).map(order => (
+                   <div key={order.id} className="rounded-2xl border border-stone-200 p-4">
+                     <div className="mb-4 flex items-start justify-between">
+                       <div>
+                         <p className="text-xs text-stone-500">Order Ref: {order.reference}</p>
+                         <p className="font-semibold">{new Date(order.createdAt).toLocaleDateString()}</p>
+                       </div>
+                       <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase ${order.status === 'Delivered' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{order.status}</span>
+                     </div>
+                     <div className="space-y-2">
+                       {order.items.map(item => (
+                         <div key={item.productId} className="flex justify-between text-sm">
+                           <span className="truncate pr-4">{item.yards}x {item.productName}</span>
+                           <span className="font-semibold">{formatMoney(item.total)}</span>
+                         </div>
+                       ))}
+                     </div>
+                     <div className="mt-4 flex justify-between border-t border-stone-100 pt-4 font-semibold">
+                       <span>Total</span>
+                       <span>{formatMoney(order.total)}</span>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+            )}
+          </div>
+        </aside>
       )}
 
       <a
