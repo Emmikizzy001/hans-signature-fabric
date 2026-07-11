@@ -13,7 +13,7 @@ type Product = {
   category: ProductCategory;
   price: number;
   stock: number;
-  minYards: number;
+  minPieces: number;
   image: string;
   images?: string[];
   palette: string;
@@ -23,7 +23,7 @@ type Product = {
 
 type CartItem = {
   productId: string;
-  yards: number;
+  pieces: number;
 };
 
 type CheckoutDetails = {
@@ -40,7 +40,7 @@ type CheckoutDetails = {
 type OrderLine = {
   productId: string;
   productName: string;
-  yards: number;
+  pieces: number;
   price: number;
   total: number;
   image: string;
@@ -93,7 +93,6 @@ declare global {
 }
 
 // Security Fix: PIN is now loaded from environment variables, never hardcoded.
-// If VITE_ADMIN_PIN is not set in Netlify, it defaults to a completely locked state ("LOCKED") so no one can guess it.
 const ADMIN_PIN = import.meta.env.VITE_ADMIN_PIN || "LOCKED";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 const PRODUCT_STORAGE_KEY = "hans-signature-products-v2";
@@ -107,8 +106,9 @@ const defaultProducts: Product[] = [
     category: "Premium Big Cotton Ankara",
     price: 12500,
     stock: 24,
-    minYards: 3,
+    minPieces: 1,
     image: "/images/ankara-geo-ochre.jpg",
+    images: ["/images/ankara-geo-ochre.jpg"],
     palette: "Ochre, navy, cream",
     description: "A clean geometric print for gowns, two-piece sets, shirts, and corporate casual looks.",
     tag: "New arrival",
@@ -119,8 +119,9 @@ const defaultProducts: Product[] = [
     category: "Medium print Ankara",
     price: 11500,
     stock: 18,
-    minYards: 3,
+    minPieces: 1,
     image: "/images/ankara-cocoa-stripe.jpg",
+    images: ["/images/ankara-cocoa-stripe.jpg"],
     palette: "Cocoa, blush, black",
     description: "A refined stripe and dot print that works beautifully for wrappers, kaftans, and casual sets.",
     tag: "Best seller",
@@ -131,8 +132,9 @@ const defaultProducts: Product[] = [
     category: "Small Print Ankara",
     price: 11000,
     stock: 31,
-    minYards: 3,
+    minPieces: 1,
     image: "/images/ankara-mono-floral.jpg",
+    images: ["/images/ankara-mono-floral.jpg"],
     palette: "Black and white",
     description: "Minimal floral details for customers who want Ankara with a calm, modern finish.",
     tag: "Everyday wear",
@@ -143,8 +145,9 @@ const defaultProducts: Product[] = [
     category: "Wholesale",
     price: 10800,
     stock: 52,
-    minYards: 6,
+    minPieces: 5,
     image: "/images/ankara-charcoal-wave.jpg",
+    images: ["/images/ankara-charcoal-wave.jpg"],
     palette: "Charcoal, ivory",
     description: "A repeat pattern suited for bulk orders, uniforms, family aso ebi, and ready-to-wear production.",
     tag: "Wholesale ready",
@@ -155,8 +158,9 @@ const defaultProducts: Product[] = [
     category: "Adire",
     price: 15000,
     stock: 12,
-    minYards: 3,
+    minPieces: 1,
     image: "/images/ankara-rust-symbol.jpg",
+    images: ["/images/ankara-rust-symbol.jpg"],
     palette: "Rust, orange, cream",
     description: "Warm heritage-inspired motifs for customers who want a bold traditional statement.",
     tag: "Limited stock",
@@ -167,7 +171,7 @@ const defaultProducts: Product[] = [
     category: "Lace Fabrics",
     price: 18000,
     stock: 9,
-    minYards: 3,
+    minPieces: 1,
     image: "/images/ankara-mono-floral.jpg",
     images: ["/images/ankara-mono-floral.jpg"],
     palette: "Black, white, silver",
@@ -180,7 +184,7 @@ const defaultProducts: Product[] = [
     category: "Senator Materials",
     price: 14000,
     stock: 40,
-    minYards: 4,
+    minPieces: 1,
     image: "/images/senator-material.jpg",
     images: ["/images/senator-material.jpg"],
     palette: "Navy Blue, Charcoal",
@@ -193,7 +197,7 @@ const defaultProducts: Product[] = [
     category: "Crepe Fabrics",
     price: 8500,
     stock: 60,
-    minYards: 3,
+    minPieces: 1,
     image: "/images/crepe-fabric.jpg",
     images: ["/images/crepe-fabric.jpg"],
     palette: "Emerald Green",
@@ -206,7 +210,7 @@ const defaultProducts: Product[] = [
     category: "Aso-Oke",
     price: 35000,
     stock: 5,
-    minYards: 1,
+    minPieces: 1,
     image: "/images/aso-oke.jpg",
     images: ["/images/aso-oke.jpg"],
     palette: "Burgundy, Gold",
@@ -221,7 +225,7 @@ const emptyProduct: Product = {
   category: "Premium Big Cotton Ankara",
   price: 0,
   stock: 0,
-  minYards: 3,
+  minPieces: 1,
   image: "/images/ankara-geo-ochre.jpg",
   images: ["/images/ankara-geo-ochre.jpg"],
   palette: "",
@@ -235,7 +239,7 @@ const orderStatuses: OrderStatus[] = ["New", "Processing", "Shipped", "Delivered
 
 const deliveryOptions: Record<DeliveryOption, { label: string; fee: number; eta: string }> = {
   pickup: {
-    label: "Pickup at Oshodi/CANA, Ikorodu",
+    label: "Pickup at Oshodi, Ikorodu",
     fee: 0,
     eta: "Same day after confirmation",
   },
@@ -380,6 +384,7 @@ export default function App() {
   const [heroImage, setHeroImage] = useState(() => readStorage(HERO_STORAGE_KEY, "/images/hans-hero.jpg"));
   const [isBackendConnected, setIsBackendConnected] = useState(false);
   const [isSupabaseConnected, setIsSupabaseConnected] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -390,7 +395,7 @@ export default function App() {
   const [authMessage, setAuthMessage] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [selectedYards, setSelectedYards] = useState(3);
+  const [selectedPieces, setSelectedPieces] = useState(1);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
@@ -403,6 +408,10 @@ export default function App() {
   const [isPaying, setIsPaying] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isOrdersOpen, setIsOrdersOpen] = useState(false);
+
+  useEffect(() => writeStorage(PRODUCT_STORAGE_KEY, products), [products]);
+  useEffect(() => writeStorage(ORDER_STORAGE_KEY, orders), [orders]);
+  useEffect(() => writeStorage(HERO_STORAGE_KEY, heroImage), [heroImage]);
 
   useEffect(() => {
     if (supabase) {
@@ -455,10 +464,6 @@ export default function App() {
     };
   }, []);
 
-  useEffect(() => writeStorage(PRODUCT_STORAGE_KEY, products), [products]);
-  useEffect(() => writeStorage(ORDER_STORAGE_KEY, orders), [orders]);
-  useEffect(() => writeStorage(HERO_STORAGE_KEY, heroImage), [heroImage]);
-
   const visibleProducts = useMemo(() => {
     if (activeCategory === "All") return products;
     return products.filter((product) => product.category === activeCategory);
@@ -470,7 +475,7 @@ export default function App() {
         .map((item) => {
           const product = products.find((entry) => entry.id === item.productId);
           if (!product) return null;
-          return { ...item, product, lineTotal: item.yards * product.price };
+          return { ...item, product, lineTotal: item.pieces * product.price };
         })
         .filter(Boolean) as Array<CartItem & { product: Product; lineTotal: number }>,
     [cart, products],
@@ -479,7 +484,7 @@ export default function App() {
   const subtotal = cartLines.reduce((sum, item) => sum + item.lineTotal, 0);
   const deliveryFee = deliveryOptions[checkout.delivery].fee;
   const grandTotal = subtotal + (cartLines.length ? deliveryFee : 0);
-  const cartYards = cart.reduce((sum, item) => sum + item.yards, 0);
+  const cartPieces = cart.reduce((sum, item) => sum + item.pieces, 0);
   const totalRevenue = orders
     .filter((order) => order.status === "Delivered" || order.status === "Shipped")
     .reduce((sum, order) => sum + order.total, 0);
@@ -487,38 +492,38 @@ export default function App() {
 
   const openProduct = (product: Product) => {
     setSelectedProduct(product);
-    setSelectedYards(product.minYards);
+    setSelectedPieces(product.minPieces);
   };
 
-  const addToCart = (product: Product, yards: number) => {
-    const safeYards = Math.min(Math.max(yards, product.minYards), product.stock);
-    if (safeYards < product.minYards) return;
+  const addToCart = (product: Product, pieces: number) => {
+    const safePieces = Math.min(Math.max(pieces, product.minPieces), product.stock);
+    if (safePieces < product.minPieces) return;
 
     setCart((current) => {
       const existing = current.find((item) => item.productId === product.id);
-      if (!existing) return [...current, { productId: product.id, yards: safeYards }];
+      if (!existing) return [...current, { productId: product.id, pieces: safePieces }];
 
       return current.map((item) =>
         item.productId === product.id
-          ? { ...item, yards: Math.min(item.yards + safeYards, product.stock) }
+          ? { ...item, pieces: Math.min(item.pieces + safePieces, product.stock) }
           : item,
       );
     });
     setIsCartOpen(true);
   };
 
-  const updateCartYards = (productId: string, yards: number) => {
+  const updateCartPieces = (productId: string, pieces: number) => {
     const product = products.find((item) => item.id === productId);
     if (!product) return;
 
-    if (yards < product.minYards) {
+    if (pieces < product.minPieces) {
       setCart((current) => current.filter((item) => item.productId !== productId));
       return;
     }
 
     setCart((current) =>
       current.map((item) =>
-        item.productId === productId ? { ...item, yards: Math.min(yards, product.stock) } : item,
+        item.productId === productId ? { ...item, pieces: Math.min(pieces, product.stock) } : item,
       ),
     );
   };
@@ -542,7 +547,7 @@ export default function App() {
     const orderItems: OrderLine[] = cartLines.map((item) => ({
       productId: item.product.id,
       productName: item.product.name,
-      yards: item.yards,
+      pieces: item.pieces,
       price: item.product.price,
       total: item.lineTotal,
       image: getProductImage(item.product),
@@ -573,7 +578,7 @@ export default function App() {
         setProducts((current) =>
           current.map((product) => {
             const orderedItem = cart.find((item) => item.productId === product.id);
-            return orderedItem ? { ...product, stock: Math.max(0, product.stock - orderedItem.yards) } : product;
+            return orderedItem ? { ...product, stock: Math.max(0, product.stock - orderedItem.pieces) } : product;
           }),
         );
         setOrders((current) => [newOrder, ...current]);
@@ -582,7 +587,7 @@ export default function App() {
       setProducts((current) =>
         current.map((product) => {
           const orderedItem = cart.find((item) => item.productId === product.id);
-          return orderedItem ? { ...product, stock: Math.max(0, product.stock - orderedItem.yards) } : product;
+          return orderedItem ? { ...product, stock: Math.max(0, product.stock - orderedItem.pieces) } : product;
         }),
       );
       setOrders((current) => [newOrder, ...current]);
@@ -676,7 +681,7 @@ export default function App() {
           order_note: checkout.note,
           cart: cartLines.map((item) => ({
             product: item.product.name,
-            yards: item.yards,
+            pieces: item.pieces,
             total: item.lineTotal,
           })),
         },
@@ -697,7 +702,7 @@ export default function App() {
 
   const orderMessage = useMemo(() => {
     const lines = cartLines.map(
-      (item) => `${item.product.name} - ${item.yards} yards - ${formatMoney(item.lineTotal)}`,
+      (item) => `${item.product.name} - ${item.pieces} pieces - ${formatMoney(item.lineTotal)}`,
     );
     return [
       "Hello Hans Signature Fabrics, I want to order:",
@@ -843,7 +848,7 @@ export default function App() {
       images: getProductImages(productForm),
       price: Math.max(0, Number(productForm.price)),
       stock: Math.max(0, Number(productForm.stock)),
-      minYards: Math.max(1, Number(productForm.minYards)),
+      minPieces: Math.max(1, Number(productForm.minPieces)),
     };
 
     let savedProduct = productToSave;
@@ -949,7 +954,7 @@ export default function App() {
             )}
             <button onClick={() => setIsCartOpen(true)} className="relative inline-flex items-center p-1 transition hover:text-[#d4af37]">
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-              {cartYards > 0 && <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#d4af37] text-[10px] font-bold text-stone-950">{cartYards}</span>}
+              {cartPieces > 0 && <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#d4af37] text-[10px] font-bold text-stone-950">{cartPieces}</span>}
             </button>
           </div>
         </div>
@@ -1025,7 +1030,7 @@ export default function App() {
               Choose the print that fits the occasion.
             </h2>
             <p className="mt-5 text-lg leading-8 text-stone-600">
-              Browse fabrics by style, order in yards, add delivery details, and pay securely with Paystack.
+              Browse fabrics by style, order by pieces, add delivery details, and pay securely with Paystack.
             </p>
           </div>
 
@@ -1069,37 +1074,10 @@ export default function App() {
                     {product.category}
                   </p>
                   <h3 className="truncate text-xs font-semibold sm:text-sm">{product.name}</h3>
-                  <p className="text-xs font-semibold text-stone-600 sm:text-sm">{formatMoney(product.price)} / yard</p>
+                  <p className="text-xs font-semibold text-stone-600 sm:text-sm">{formatMoney(product.price)} / piece</p>
                 </div>
               </article>
             ))}
-          </div>
-        </section>
-
-        <section className="bg-stone-950 py-20 text-white lg:py-28">
-          <div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#f3d1a9]">Fabric guide</p>
-              <h2 className="mt-4 text-4xl font-semibold tracking-[-0.04em] sm:text-6xl">
-                Help customers order the right yards.
-              </h2>
-              <p className="mt-5 text-lg leading-8 text-white/70">
-                A clear yard guide reduces guesswork and helps buyers make faster decisions before checkout.
-              </p>
-            </div>
-            <div className="grid gap-px overflow-hidden rounded-[2rem] bg-white/15">
-              {[
-                ["Simple gown", "3 to 4 yards"],
-                ["Bubu or kaftan", "4 to 5 yards"],
-                ["Wrapper and blouse", "5 to 6 yards"],
-                ["Family aso ebi", "Contact for wholesale"],
-              ].map(([style, yards]) => (
-                <div key={style} className="grid grid-cols-2 bg-stone-950 px-5 py-5 sm:px-7">
-                  <span className="text-white/65">{style}</span>
-                  <span className="text-right font-semibold text-white">{yards}</span>
-                </div>
-              ))}
-            </div>
           </div>
         </section>
 
@@ -1137,10 +1115,10 @@ export default function App() {
                   
                   <div className="flex flex-col gap-1">
                     <h3 className="truncate text-sm font-semibold">{product.name}</h3>
-                    <p className="text-sm font-semibold text-stone-600">{formatMoney(product.price)} / yard</p>
+                    <p className="text-sm font-semibold text-stone-600">{formatMoney(product.price)} / piece</p>
                     <button
                       type="button"
-                      disabled={product.stock < product.minYards}
+                      disabled={product.stock < product.minPieces}
                       onClick={(e) => { e.stopPropagation(); openProduct(product); }}
                       className="mt-2 w-full rounded-full bg-stone-950 py-2.5 text-xs font-semibold text-white transition hover:bg-[#0c331d] disabled:bg-stone-300"
                     >
@@ -1160,7 +1138,7 @@ export default function App() {
                 Customers can reach, order, and receive fabrics from Lagos.
               </h2>
               <p className="mt-5 text-lg leading-8 text-stone-600">
-                Hans Signature Fabrics serves retail and wholesale customers from Oshodi/CANA, Ikorodu, Lagos, Nigeria.
+                Hans Signature Fabrics serves retail and wholesale customers from Oshodi/Ikorodu, Lagos, Nigeria.
               </p>
             </div>
 
@@ -1200,7 +1178,7 @@ export default function App() {
               </a>
               <div className="text-sm text-white/70">
                 <p>Premium Prints for Every Occasion.</p>
-                <p className="mt-1">Oshodi/CANA, Ikorodu, Lagos, Nigeria.</p>
+                <p className="mt-1">Oshodi/Ikorodu, Lagos, Nigeria.</p>
               </div>
             </div>
 
@@ -1283,12 +1261,12 @@ export default function App() {
               <p className="mt-6 text-stone-600">{selectedProduct.description}</p>
               <div className="mt-7 grid gap-px overflow-hidden rounded-3xl bg-stone-200">
                 <div className="grid grid-cols-2 bg-white px-5 py-4">
-                  <span className="text-stone-500">Price per yard</span>
+                  <span className="text-stone-500">Price</span>
                   <span className="text-right font-semibold">{formatMoney(selectedProduct.price)}</span>
                 </div>
                 <div className="grid grid-cols-2 bg-white px-5 py-4">
-                  <span className="text-stone-500">Available stock</span>
-                  <span className="text-right font-semibold">{selectedProduct.stock} yards</span>
+                  <span className="text-stone-500">Stock (Pieces Available)</span>
+                  <span className="text-right font-semibold">{selectedProduct.stock} pieces</span>
                 </div>
                 <div className="grid grid-cols-2 bg-white px-5 py-4">
                   <span className="text-stone-500">Palette</span>
@@ -1297,50 +1275,51 @@ export default function App() {
               </div>
 
               <div className="mt-8">
-                <label className="text-sm font-semibold text-stone-700" htmlFor="yards">
-                  Yards
+                <label className="text-sm font-semibold text-stone-700" htmlFor="pieces">
+                  Order Quantity (Pieces)
                 </label>
                 <div className="mt-3 flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => setSelectedYards((yards) => Math.max(selectedProduct.minYards, yards - 1))}
+                    onClick={() => setSelectedPieces((pieces) => Math.max(selectedProduct.minPieces, pieces - 1))}
                     className="h-11 w-11 rounded-full border border-stone-300 font-semibold transition hover:border-stone-950"
                   >
                     -
                   </button>
                   <input
-                    id="yards"
+                    id="pieces"
                     type="number"
-                    min={selectedProduct.minYards}
+                    min={selectedProduct.minPieces}
                     max={selectedProduct.stock}
-                    value={selectedYards}
-                    onChange={(event) => setSelectedYards(Number(event.target.value))}
+                    value={selectedPieces}
+                    onChange={(event) => setSelectedPieces(Number(event.target.value))}
                     className="h-11 w-24 rounded-full border border-stone-300 text-center font-semibold outline-none focus:border-stone-950"
                   />
                   <button
                     type="button"
-                    onClick={() => setSelectedYards((yards) => Math.min(selectedProduct.stock, yards + 1))}
+                    onClick={() => setSelectedPieces((pieces) => Math.min(selectedProduct.stock, pieces + 1))}
                     className="h-11 w-11 rounded-full border border-stone-300 font-semibold transition hover:border-stone-950"
                   >
                     +
                   </button>
                 </div>
+                <p className="mt-2 text-xs font-semibold text-stone-500">Minimum Order: {selectedProduct.minPieces} piece(s)</p>
               </div>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
                   onClick={() => {
-                    addToCart(selectedProduct, selectedYards);
+                    addToCart(selectedProduct, selectedPieces);
                     setSelectedProduct(null);
                   }}
                   className="rounded-full bg-stone-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#a85c20]"
                 >
-                  Add to cart - {formatMoney(selectedProduct.price * selectedYards)}
+                  Add to cart - {formatMoney(selectedProduct.price * selectedPieces)}
                 </button>
                 <a
                   href={getWhatsAppUrl(
-                    `Hello Hans Signature Fabrics, I want ${selectedYards} yards of ${selectedProduct.name}.`,
+                    `Hello Hans Signature Fabrics, I want ${selectedPieces} pieces of ${selectedProduct.name}.`,
                   )}
                   target="_blank"
                   rel="noreferrer"
@@ -1397,7 +1376,7 @@ export default function App() {
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <p className="font-semibold">{item.product.name}</p>
-                          <p className="text-sm text-stone-500">{formatMoney(item.product.price)} per yard</p>
+                          <p className="text-sm text-stone-500">{formatMoney(item.product.price)} per piece</p>
                         </div>
                         <button
                           type="button"
@@ -1411,15 +1390,15 @@ export default function App() {
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => updateCartYards(item.productId, item.yards - 1)}
+                            onClick={() => updateCartPieces(item.productId, item.pieces - 1)}
                             className="h-8 w-8 rounded-full border border-stone-300 font-semibold"
                           >
                             -
                           </button>
-                          <span className="w-16 text-center text-sm font-semibold">{item.yards} yd</span>
+                          <span className="w-16 text-center text-sm font-semibold">{item.pieces} pc</span>
                           <button
                             type="button"
-                            onClick={() => updateCartYards(item.productId, item.yards + 1)}
+                            onClick={() => updateCartPieces(item.productId, item.pieces + 1)}
                             className="h-8 w-8 rounded-full border border-stone-300 font-semibold"
                           >
                             +
@@ -1572,15 +1551,6 @@ export default function App() {
         </div>
       </aside>
 
-      {isCartOpen && (
-        <button
-          type="button"
-          aria-label="Close cart overlay"
-          onClick={() => setIsCartOpen(false)}
-          className="fixed inset-0 z-40 bg-stone-950/30 backdrop-blur-[2px]"
-        />
-      )}
-
       {isAuthOpen && !user && (
         <aside className="fixed inset-y-0 right-0 z-[80] flex w-full max-w-md transform flex-col bg-white shadow-2xl transition duration-300 translate-x-0 overflow-y-auto">
           <div className="flex items-center justify-between p-6 sm:p-8">
@@ -1680,6 +1650,49 @@ export default function App() {
           onClick={() => setIsAuthOpen(false)}
           className="fixed inset-0 z-[70] bg-stone-950/30 backdrop-blur-[2px]"
         />
+      )}
+
+      {isOrdersOpen && (
+        <aside className="fixed inset-y-0 right-0 z-[80] flex w-full max-w-md transform flex-col overflow-y-auto bg-white shadow-2xl transition duration-300">
+          <div className="flex items-center justify-between border-b border-stone-100 p-6 sm:p-8">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#d4af37]">Customer Account</p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">My Orders</h2>
+            </div>
+            <button onClick={() => setIsOrdersOpen(false)} className="rounded-full border border-stone-200 px-4 py-2 text-sm font-semibold transition hover:border-stone-950">Close</button>
+          </div>
+          <div className="flex-1 p-6 sm:p-8">
+            {orders.filter(o => o.customer.email === user?.email).length === 0 ? (
+               <p className="text-stone-500">You haven't placed any orders yet.</p>
+            ) : (
+               <div className="space-y-6">
+                 {orders.filter(o => o.customer.email === user?.email).map(order => (
+                   <div key={order.id} className="rounded-2xl border border-stone-200 p-4">
+                     <div className="mb-4 flex items-start justify-between">
+                       <div>
+                         <p className="text-xs text-stone-500">Order Ref: {order.reference}</p>
+                         <p className="font-semibold">{new Date(order.createdAt).toLocaleDateString()}</p>
+                       </div>
+                       <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase ${order.status === 'Delivered' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{order.status}</span>
+                     </div>
+                     <div className="space-y-2">
+                       {order.items.map(item => (
+                         <div key={item.productId} className="flex justify-between text-sm">
+                           <span className="truncate pr-4">{item.pieces}x {item.productName}</span>
+                           <span className="font-semibold">{formatMoney(item.total)}</span>
+                         </div>
+                       ))}
+                     </div>
+                     <div className="mt-4 flex justify-between border-t border-stone-100 pt-4 font-semibold">
+                       <span>Total</span>
+                       <span>{formatMoney(order.total)}</span>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+            )}
+          </div>
+        </aside>
       )}
 
       {isAdminOpen && (
@@ -1840,7 +1853,7 @@ export default function App() {
                           />
                         </label>
                         <label className="text-sm font-semibold text-stone-700">
-                          Price per yard
+                          Price per piece
                           <input
                             type="number"
                             value={productForm.price}
@@ -1849,7 +1862,7 @@ export default function App() {
                           />
                         </label>
                         <label className="text-sm font-semibold text-stone-700">
-                          Stock in yards
+                          Stock (Pieces Available)
                           <input
                             type="number"
                             value={productForm.stock}
@@ -1858,11 +1871,11 @@ export default function App() {
                           />
                         </label>
                         <label className="text-sm font-semibold text-stone-700">
-                          Minimum yards
+                          Minimum Order (Pieces)
                           <input
                             type="number"
-                            value={productForm.minYards}
-                            onChange={(event) => setProductForm({ ...productForm, minYards: Number(event.target.value) })}
+                            value={productForm.minPieces}
+                            onChange={(event) => setProductForm({ ...productForm, minPieces: Number(event.target.value) })}
                             className="mt-2 w-full rounded-2xl border border-stone-300 px-4 py-3 font-normal outline-none focus:border-stone-950"
                           />
                         </label>
@@ -1914,12 +1927,12 @@ export default function App() {
                       {products.map((product) => (
                         <div key={product.id} className="grid gap-4 rounded-3xl border border-stone-200 p-4 md:grid-cols-[1fr_auto] md:items-center">
                           <div className="flex gap-4">
-                          <img src={getProductImage(product)} alt="" className="h-20 w-20 rounded-2xl object-cover" />
+                            <img src={getProductImage(product)} alt="" className="h-20 w-20 rounded-2xl object-cover" />
                             <div>
                               <p className="font-semibold">{product.name}</p>
-                              <p className="text-sm text-stone-500">{product.category} / {formatMoney(product.price)} per yard</p>
+                              <p className="text-sm text-stone-500">{product.category} / {formatMoney(product.price)} per piece</p>
                               <p className={product.stock <= 10 ? "mt-1 text-sm font-semibold text-red-700" : "mt-1 text-sm font-semibold text-emerald-700"}>
-                                {product.stock} yards left
+                                {product.stock} pieces left
                               </p>
                             </div>
                           </div>
@@ -2015,7 +2028,7 @@ export default function App() {
                             <div className="mt-4 space-y-2">
                               {order.items.map((item) => (
                                 <div key={`${order.id}-${item.productId}`} className="flex justify-between gap-4 text-sm">
-                                  <span>{item.productName} x {item.yards} yd</span>
+                                  <span>{item.productName} x {item.pieces} pc</span>
                                   <span className="font-semibold">{formatMoney(item.total)}</span>
                                 </div>
                               ))}
@@ -2036,49 +2049,6 @@ export default function App() {
             )}
           </div>
         </div>
-      )}
-
-      {isOrdersOpen && (
-        <aside className="fixed inset-y-0 right-0 z-[80] flex w-full max-w-md transform flex-col overflow-y-auto bg-white shadow-2xl transition duration-300">
-          <div className="flex items-center justify-between border-b border-stone-100 p-6 sm:p-8">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#d4af37]">Customer Account</p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">My Orders</h2>
-            </div>
-            <button onClick={() => setIsOrdersOpen(false)} className="rounded-full border border-stone-200 px-4 py-2 text-sm font-semibold transition hover:border-stone-950">Close</button>
-          </div>
-          <div className="flex-1 p-6 sm:p-8">
-            {orders.filter(o => o.customer.email === user?.email).length === 0 ? (
-               <p className="text-stone-500">You haven't placed any orders yet.</p>
-            ) : (
-               <div className="space-y-6">
-                 {orders.filter(o => o.customer.email === user?.email).map(order => (
-                   <div key={order.id} className="rounded-2xl border border-stone-200 p-4">
-                     <div className="mb-4 flex items-start justify-between">
-                       <div>
-                         <p className="text-xs text-stone-500">Order Ref: {order.reference}</p>
-                         <p className="font-semibold">{new Date(order.createdAt).toLocaleDateString()}</p>
-                       </div>
-                       <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase ${order.status === 'Delivered' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{order.status}</span>
-                     </div>
-                     <div className="space-y-2">
-                       {order.items.map(item => (
-                         <div key={item.productId} className="flex justify-between text-sm">
-                           <span className="truncate pr-4">{item.yards}x {item.productName}</span>
-                           <span className="font-semibold">{formatMoney(item.total)}</span>
-                         </div>
-                       ))}
-                     </div>
-                     <div className="mt-4 flex justify-between border-t border-stone-100 pt-4 font-semibold">
-                       <span>Total</span>
-                       <span>{formatMoney(order.total)}</span>
-                     </div>
-                   </div>
-                 ))}
-               </div>
-            )}
-          </div>
-        </aside>
       )}
 
       <a
