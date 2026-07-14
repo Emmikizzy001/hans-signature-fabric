@@ -107,7 +107,7 @@ const defaultProducts: Product[] = [
     category: "Premium Big Cotton Ankara",
     price: 12500,
     stock: 24,
-    minYards: 3,
+    minYards: 0,
     image: "/images/ankara-geo-ochre.jpg",
     palette: "Ochre, navy, cream",
     description: "A clean geometric print for gowns, two-piece sets, shirts, and corporate casual looks.",
@@ -119,7 +119,7 @@ const defaultProducts: Product[] = [
     category: "Medium print Ankara",
     price: 11500,
     stock: 18,
-    minYards: 3,
+    minYards: 0,
     image: "/images/ankara-cocoa-stripe.jpg",
     palette: "Cocoa, blush, black",
     description: "A refined stripe and dot print that works beautifully for wrappers, kaftans, and casual sets.",
@@ -131,7 +131,7 @@ const defaultProducts: Product[] = [
     category: "Small Print Ankara",
     price: 11000,
     stock: 31,
-    minYards: 3,
+    minYards: 0,
     image: "/images/ankara-mono-floral.jpg",
     palette: "Black and white",
     description: "Minimal floral details for customers who want Ankara with a calm, modern finish.",
@@ -143,7 +143,7 @@ const defaultProducts: Product[] = [
     category: "Wholesale",
     price: 10800,
     stock: 52,
-    minYards: 6,
+    minYards: 0,
     image: "/images/ankara-charcoal-wave.jpg",
     palette: "Charcoal, ivory",
     description: "A repeat pattern suited for bulk orders, uniforms, family aso ebi, and ready-to-wear production.",
@@ -155,7 +155,7 @@ const defaultProducts: Product[] = [
     category: "Adire",
     price: 15000,
     stock: 12,
-    minYards: 3,
+    minYards: 0,
     image: "/images/ankara-rust-symbol.jpg",
     palette: "Rust, orange, cream",
     description: "Warm heritage-inspired motifs for customers who want a bold traditional statement.",
@@ -167,7 +167,7 @@ const defaultProducts: Product[] = [
     category: "Lace Fabrics",
     price: 18000,
     stock: 9,
-    minYards: 3,
+    minYards: 0,
     image: "/images/ankara-mono-floral.jpg",
     images: ["/images/ankara-mono-floral.jpg"],
     palette: "Black, white, silver",
@@ -180,7 +180,7 @@ const defaultProducts: Product[] = [
     category: "Senator Materials",
     price: 14000,
     stock: 40,
-    minYards: 4,
+    minYards: 0,
     image: "/images/senator-material.jpg",
     images: ["/images/senator-material.jpg"],
     palette: "Navy Blue, Charcoal",
@@ -193,7 +193,7 @@ const defaultProducts: Product[] = [
     category: "Crepe Fabrics",
     price: 8500,
     stock: 60,
-    minYards: 3,
+    minYards: 0,
     image: "/images/crepe-fabric.jpg",
     images: ["/images/crepe-fabric.jpg"],
     palette: "Emerald Green",
@@ -326,8 +326,14 @@ const apiRequest = async <T,>(path: string, options: RequestInit = {}) => {
   return (await response.json()) as T;
 };
 
-const SocialIcon = ({ name }: { name: "whatsapp" | "instagram" | "facebook" | "email" | "phone" }) => {
-  const iconClass = "h-4 w-4";
+const SocialIcon = ({ name, className }: { name: "whatsapp" | "instagram" | "facebook" | "email" | "phone" | "share" | "heart" | "heart-filled" | "star" | "twitter", className?: string }) => {
+  const iconClass = className || "h-4 w-4";
+
+  if (name === "twitter") return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>;
+  if (name === "star") return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>;
+  if (name === "heart") return <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>;
+  if (name === "heart-filled") return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>;
+  if (name === "share") return <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>;
 
   if (name === "whatsapp") {
     return (
